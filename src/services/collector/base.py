@@ -75,7 +75,14 @@ class ReviewsBaseScraper:
     ) -> Dict:
         attempts = 0
         proxy_url, username, password = await self.get_proxy_url()
-        params = {"proxy": proxy_url} if proxy_url else {}
+        params = (
+            {
+                "proxy": proxy_url,
+                "proxy_auth": BasicAuth(login=username, password=password),
+            }
+            if proxy_url
+            else {}
+        )
         async with ClientSession() as session:
             async with session.post(
                 url=url, headers=get_headers(), json=data, **params
