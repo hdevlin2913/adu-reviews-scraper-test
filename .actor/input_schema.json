@@ -8,7 +8,7 @@
           "type": "array",
           "description": "List of places to scrape",
           "prefill": ["Đà Lạt", "Nha Trang", "Vũng Tàu", "Đà Nẵng"],
-          "editor": "requestListSources"
+          "editor": "json"
        },
        "useApifyProxy": {
           "title": "Apify Proxy",
