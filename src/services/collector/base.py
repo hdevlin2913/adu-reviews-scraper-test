@@ -15,7 +15,7 @@ class ReviewsBaseScraper:
     async def get_proxy_url(self) -> tuple[str, str, str]:
         if self.use_apify_proxies:
             proxy_configuration = await Actor.create_proxy_configuration(
-                groups=["RESIDENTIAL", "GOOGLE_SERP"]
+                groups=["RESIDENTIAL"]
             )
             proxy_url = await proxy_configuration.new_url()
             username = await proxy_configuration._get_username()
