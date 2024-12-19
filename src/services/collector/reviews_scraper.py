@@ -124,6 +124,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             location = locations[0]
             hotel_url = base_url + location.hotels_url  # type: ignore[operator]
 
+            log.info(f"Scraping hotels for query: {query}")
+
             response = await self.get_data(url=hotel_url, type="text")
             if not response:
                 log.error(f"No search results for query: {query}")
@@ -158,6 +160,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             )
 
             results.extend(additional_results)
+
+            log.info(f"Scraped {len(results)} hotels for query: {query}")
             return results
         except Exception as e:
             log.error(f"Error in search hotels for query {query}: {e}")
@@ -205,6 +209,8 @@ class ReviewsScraper(ReviewsBaseScraper):
                 log.error(f"No parseable data found for {url}")
                 return None
 
+            log.info(f"Scraping reviews for {results.basic_data.name}")
+
             total_reviews = int(results.basic_data.aggregate_rating.review_count)
             total_pages = math.ceil(total_reviews / page_size)
             if max_pages and max_pages < total_pages:
@@ -224,6 +230,10 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             for response in additional_results:
                 results.reviews.extend(getattr(response, "reviews", []))
+
+            log.info(
+                f"Scraped {len(results.reviews)} reviews for {results.basic_data.name}"
+            )
             return results
         except Exception as e:
             log.error(f"Error in scraping data with reviews for {url}: {e}")
