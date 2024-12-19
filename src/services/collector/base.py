@@ -19,7 +19,7 @@ class ReviewsBaseScraper:
             )
             proxy_url = await proxy_configuration.new_url()
             username = await proxy_configuration._get_username()
-            password = await proxy_configuration._password()
+            password = await proxy_configuration._password
             log.info(f"Using proxy: {proxy_url}")
             return proxy_url, username, password
         return None
