@@ -14,7 +14,9 @@ class ReviewsBaseScraper:
 
     async def get_proxy_url(self) -> str | None:
         if self.use_apify_proxies:
-            proxy_configuration = await Actor.create_proxy_configuration()
+            proxy_configuration = await Actor.create_proxy_configuration(
+                groups=["RESIDENTIAL"]
+            )
             return await proxy_configuration.new_url()  # type: ignore
         return None
 
