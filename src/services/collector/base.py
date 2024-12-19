@@ -26,6 +26,7 @@ class ReviewsBaseScraper:
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
         proxy_url = await self.get_proxy_url()
+        log.info("Using proxy: %s", proxy_url)
         params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
             async with session.get(  # type: ignore
