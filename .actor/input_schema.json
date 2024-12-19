@@ -3,13 +3,19 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "url": {
-            "title": "URL of the page",
-            "type": "string",
-            "description": "The URL of website you want to get the data from.",
-            "editor": "textfield",
-            "prefill": "https://www.apify.com/"
-        }
+       "placesQuery": {
+          "title": "Name of the places to scrape",
+          "type": "array",
+          "description": "List of places to scrape",
+          "prefill": ["Đà Lạt", "Nha Trang", "Vũng Tàu", "Đà Nẵng"],
+          "editor": "requestListSources"
+       },
+       "useApifyProxy": {
+          "title": "Apify Proxy",
+          "type": "boolean",
+          "description": "Use Proxies provided by Apify",
+          "default": false
+       }
     },
     "required": ["url"]
 }

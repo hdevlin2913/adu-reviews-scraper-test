@@ -5,7 +5,7 @@
 	"description": "This actor extracts data and reviews from TripAdvisor.",
 	"version": "0.0",
 	"meta": {
-		"templateId": "python-start"
+		"templateId": "python-beautifulsoup"
 	},
 	"input": "./input_schema.json",
 	"dockerfile": "./Dockerfile"

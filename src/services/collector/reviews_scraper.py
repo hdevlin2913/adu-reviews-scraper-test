@@ -105,8 +105,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             return [
                 LocationSchema.model_validate(result["details"]) for result in results
             ]
-        except (KeyError, IndexError) as e:
-            log.error(f"Error parsing location data for query {query}: {e}")
+        except Exception as e:
+            log.error(f"Error in location search for query {query}: {e}")
             return []
 
     async def scrape_search_hotels(
@@ -138,21 +138,15 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             soup = BeautifulSoup(response, "lxml")
             page_size = len(results)
-            total_text = soup.find(
-                "span", string=lambda t: t and "properties" in t
-            ).get_text()
-            total_hotels = int(total_text.replace(",", "").split()[0])
+            total_tag = soup.find("span", string=lambda t: t and "properties" in t)
+            total_hotels = int(total_tag.get_text().replace(",", "").split()[0])
 
             total_pages = int(math.ceil(total_hotels / page_size))
             if max_pages and max_pages < total_pages:
                 total_pages = max_pages
 
-            next_page_path = (
-                soup.find("a", {"aria-label": "Next page"})["href"]
-                if soup.find("a", {"aria-label": "Next page"})
-                else None
-            )
-            next_page_url = urljoin(hotel_url, next_page_path)
+            next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
+            next_page_url = urljoin(hotel_url, next_page_tag)
             pagination_urls = self.generate_pagination_urls(
                 base_url=next_page_url,
                 page_size=page_size,
@@ -168,7 +162,7 @@ class ReviewsScraper(ReviewsBaseScraper):
             results.extend(additional_results)
             return results
         except Exception as e:
-            log.error(f"Error in hotel search for query {query}: {e}")
+            log.error(f"Error in search hotels for query {query}: {e}")
             return []
 
     def parse_search_hotel(self, response: str, url: str) -> List[SearchSchema]:
@@ -198,38 +192,42 @@ class ReviewsScraper(ReviewsBaseScraper):
         page_size: Optional[int] = 10,
         max_pages: Optional[int] = None,
         base_url: str = "https://www.tripadvisor.com",
-    ) -> PlaceSchema:
-        url = base_url + url_path
-        response = await self.get_data(url=url, headers=get_headers(), type="text")
-        if not response:
-            log.error(f"Could not scrape data for {url}")
-            return {}
+    ) -> PlaceSchema | None:
+        try:
+            url = base_url + url_path
+            response = await self.get_data(url=url, headers=get_headers(), type="text")
+            if not response:
+                  log.error(f"No data found for {url}")
+                  return None
 
-        results = self.parse_data_with_reviews(response=response)
-        if not results:
-            log.error(f"Could not parse data for {url}")
-            return {}
+            results = self.parse_data_with_reviews(response=response)
+            if not results:
+                  log.error(f"No parseable data found for {url}")
+                  return None
 
-        total_reviews = int(results.basic_data.aggregate_rating.review_count)
-        total_pages = math.ceil(total_reviews / page_size)
-        if max_pages and max_pages < total_pages:
-            total_pages = max_pages
+            total_reviews = int(results.basic_data.aggregate_rating.review_count)
+            total_pages = math.ceil(total_reviews / page_size)
+            if max_pages and max_pages < total_pages:
+                  total_pages = max_pages
 
-        pagination_urls = self.generate_pagination_urls(
-            base_url=url,
-            page_size=page_size,
-            total_pages=total_pages,
-            strategy="reviews",
-        )
+            pagination_urls = self.generate_pagination_urls(
+                  base_url=url,
+                  page_size=page_size,
+                  total_pages=total_pages,
+                  strategy="reviews",
+            )
 
-        additional_results = await self.fetch_pagination_results(
-            pagination_urls=pagination_urls,
-            function=self.parse_data_with_reviews,
-        )
+            additional_results = await self.fetch_pagination_results(
+                  pagination_urls=pagination_urls,
+                  function=self.parse_data_with_reviews,
+            )
 
-        for response in additional_results:
-            results.reviews.extend(getattr(response, "reviews", []))
-        return results
+            for response in additional_results:
+                  results.reviews.extend(getattr(response, "reviews", []))
+            return results
+        except Exception as e:
+            log.error(f"Error in scraping data with reviews for {url}: {e}")
+            return None
 
     def parse_data_with_reviews(
         self, response: str, url: Optional[str] = None
@@ -307,14 +305,17 @@ class ReviewsScraper(ReviewsBaseScraper):
     ) -> List[Any]:
         results = []
         for url in pagination_urls:
-            response = await self.get_data(url=url, headers=get_headers(), type="text")
-            data = function(response=response, url=url)
+            try:
+               response = await self.get_data(url=url, headers=get_headers(), type="text")
+               data = function(response=response, url=url)
 
-            if isinstance(data, dict):
-                results.append(data)
-            elif isinstance(data, list):
-                results.extend(data)
+               if isinstance(data, dict):
+                  results.append(data)
+               elif isinstance(data, list):
+                  results.extend(data)
 
-            await asyncio.sleep(1)
+               await asyncio.sleep(1)
+            except Exception as e:
+                log.error(f"Error in fetching pagination results for {url}: {e}")
 
         return results
