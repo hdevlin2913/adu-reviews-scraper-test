@@ -17,5 +17,5 @@
           "default": false
        }
     },
-    "required": ["url"]
+    "required": ["placesQuery"]
 }
