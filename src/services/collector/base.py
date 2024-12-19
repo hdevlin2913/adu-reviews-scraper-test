@@ -17,14 +17,9 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
-        params = {
-            url: url,
-            headers: headers,
-        }
-        if self.proxy_url:
-            params["proxy"] = self.proxy_url
+        params = {"proxy": self.proxy_url} if self.proxy_url else {}
         async with ClientSession() as session:
-            async with session.get(**params) as response:
+            async with session.get(url=url, headers=headers, **params) as response:
                 while attempts < retries:
                     try:
                         if type == "json":
@@ -56,15 +51,11 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Dict:
         attempts = 0
-        params = {
-            url: url,
-            headers: headers,
-            "json": data,
-        }
-        if self.proxy_url:
-            params["proxy"] = self.proxy_url
+        params = {"proxy": self.proxy_url} if self.proxy_url else {}
         async with ClientSession() as session:
-            async with session.post(**params) as response:
+            async with session.post(
+                url=url, headers=headers, json=data, **params
+            ) as response:
                 while attempts < retries:
                     try:
                         data = await response.json()

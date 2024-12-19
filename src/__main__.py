@@ -9,16 +9,16 @@ from src.services.collector.reviews_scraper import ReviewsScraper
 async def main():
     async with Actor:
         try:
-            proxy_configuration = await Actor.create_proxy_configuration()
-            proxy_url = await proxy_configuration.new_url()
+            # proxy_configuration = await Actor.create_proxy_configuration()
+            # proxy_url = await proxy_configuration.new_url()
 
-            scraper = ReviewsScraper(proxy_url=proxy_url)
+            log.info("Processing request...")
+            scraper = ReviewsScraper(proxy_url=None)
             result = await scraper.scrape_data_with_reviews(
-                url_path="/Hotel_Review-g293922-d299557-Reviews-Dalat_Palace_Heritage_Hotel-Da_Lat_Lam_Dong_Province.html",
+                url_path="/Hotel_Review-g293922-d15122569-Reviews-Dalat_Wonder_Resort-Da_Lat_Lam_Dong_Province.html",
             )
 
-            log.info(f"Pushing {len(result)} results to the dataset...")
-            await Actor.push_data(result)
+            await Actor.push_data(result.model_dump())
             log.info("Scraping process completed successfully.")
         except Exception as e:
             log.error("An error occurred during the scraping process: %s", str(e))

@@ -1,10 +1,9 @@
 {
 	"actorSpecification": 1,
-	"name": "my-first-actor",
-	"title": "Scrape single page in Python",
-	"description": "Scrape data from single page with provided URL.",
+	"name": "adu-reviews-scraper",
+	"title": "Scrape data and reviews from TripAdvisor",
+	"description": "This actor extracts data and reviews from TripAdvisor.",
 	"version": "0.0",
-	"buildTag": "latest",
 	"meta": {
 		"templateId": "python-start"
 	},
