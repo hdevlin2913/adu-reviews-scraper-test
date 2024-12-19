@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Dict, Optional, Union
 
-from aiohttp import ClientError, ClientResponse, ClientSession
+from aiohttp import BasicAuth, ClientError, ClientResponse, ClientSession
 from apify import Actor
 from loguru import logger as log
 
@@ -12,14 +12,16 @@ class ReviewsBaseScraper:
     def __init__(self, use_apify_proxies: bool) -> None:
         self.use_apify_proxies = use_apify_proxies
 
-    async def get_proxy_url(self) -> str | None:
+    async def get_proxy_url(self) -> tuple[str, str, str]:
         if self.use_apify_proxies:
             proxy_configuration = await Actor.create_proxy_configuration(
-                groups=["RESIDENTIAL"]
+                groups=["RESIDENTIAL", "GOOGLE_SERP"]
             )
             proxy_url = await proxy_configuration.new_url()
+            username = await proxy_configuration._get_username()
+            password = await proxy_configuration._password()
             log.info(f"Using proxy: {proxy_url}")
-            return proxy_url
+            return proxy_url, username, password
         return None
 
     async def get_data(
@@ -29,8 +31,15 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
-        proxy_url = await self.get_proxy_url()
-        params = {"proxy": proxy_url} if proxy_url else {}
+        proxy_url, username, password = await self.get_proxy_url()
+        params = (
+            {
+                "proxy": proxy_url,
+                "proxy_auth": BasicAuth(login=username, password=password),
+            }
+            if proxy_url
+            else {}
+        )
         async with ClientSession() as session:
             async with session.get(
                 url=url, headers=get_headers(), **params
@@ -65,7 +74,7 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Dict:
         attempts = 0
-        proxy_url = await self.get_proxy_url()
+        proxy_url, username, password = await self.get_proxy_url()
         params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
             async with session.post(
