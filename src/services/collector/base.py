@@ -26,7 +26,6 @@ class ReviewsBaseScraper:
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
         proxy_url = await self.get_proxy_url()
-        log.info(f"Using proxy: {proxy_url}")
         params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
             async with session.get(  # type: ignore
@@ -44,7 +43,7 @@ class ReviewsBaseScraper:
 
                         return response
                     except ClientError as e:
-                        log.error("Error posting data: %s. Retrying...", e)
+                        log.error(f"Error posting data: {e}. Retrying...")
                         attempts += 1
                         await asyncio.sleep(1)
                     except ValueError:
@@ -52,7 +51,7 @@ class ReviewsBaseScraper:
                         attempts += 1
                         await asyncio.sleep(1)
 
-        log.error("Failed to post data to %s after %d attempts.", url, retries)
+        log.error(f"Failed to post data to {url} after {retries} attempts.")
         return None
 
     async def post_data(
@@ -73,13 +72,13 @@ class ReviewsBaseScraper:
                         data = await response.json()
                         return data
                     except ClientError as e:
-                        log.error("Error posting data: %s. Retrying...", e)
+                        log.error(f"Error posting data: {e}. Retrying...")
                         attempts += 1
                         await asyncio.sleep(1)
                     except ValueError:
-                        log.error("Failed to parse response as JSON. Retrying...")
+                        log.error(f"Failed to parse response as JSON. Retrying...")
                         attempts += 1
                         await asyncio.sleep(1)
 
-        log.error("Failed to post data to %s after %d attempts.", url, retries)
+        log.error(f"Failed to post data to {url} after {retries} attempts.")
         return {}

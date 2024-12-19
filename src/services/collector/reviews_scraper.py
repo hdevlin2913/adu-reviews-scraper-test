@@ -145,6 +145,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             if max_pages and max_pages < total_pages:
                 total_pages = max_pages
 
+            log.info(max_pages)
+            log.info(total_pages)
             next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
             next_page_url = urljoin(hotel_url, next_page_tag)
             pagination_urls = self.generate_pagination_urls(
@@ -156,7 +158,7 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             additional_results = await self.fetch_pagination_results(
                 pagination_urls=pagination_urls,
-                function=self.parse_search_hotel,
+                parse_function=self.parse_search_hotel,
             )
 
             results.extend(additional_results)
@@ -225,7 +227,7 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             additional_results = await self.fetch_pagination_results(
                 pagination_urls=pagination_urls,
-                function=self.parse_data_with_reviews,
+                parse_function=self.parse_data_with_reviews,
             )
 
             for response in additional_results:
@@ -315,13 +317,14 @@ class ReviewsScraper(ReviewsBaseScraper):
     async def fetch_pagination_results(
         self,
         pagination_urls: List[str],
-        function: Callable,
+        parse_function: Callable,
     ) -> List[Any]:
         results = []
         for url in pagination_urls:
+            log.info(f"Fetching pagination results for {url}")
             try:
                 response = await self.get_data(url=url, type="text")
-                data = function(response=response, url=url)
+                data = parse_function(response=response, url=url)
 
                 if isinstance(data, dict):
                     results.append(data)
