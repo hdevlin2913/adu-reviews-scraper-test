@@ -12,7 +12,9 @@ class StreetAddressSchema(BaseModel):
 
 
 class ParentNamesSchema(BaseModel):
-    long_only_hierarchy_typeahead_v2: Optional[str] = Field(None, alias="longOnlyHierarchyTypeaheadV2")
+    long_only_hierarchy_typeahead_v2: Optional[str] = Field(
+        None, alias="longOnlyHierarchyTypeaheadV2"
+    )
 
 
 class ParentSchema(BaseModel):
@@ -36,7 +38,9 @@ class HierarchySchema(BaseModel):
 
 
 class NamesSchema(BaseModel):
-    long_only_hierarchy_typeahead_v2: Optional[str] = Field(None, alias="longOnlyHierarchyTypeaheadV2")
+    long_only_hierarchy_typeahead_v2: Optional[str] = Field(
+        None, alias="longOnlyHierarchyTypeaheadV2"
+    )
 
 
 class VacationRentalsRouteSchema(BaseModel):
@@ -47,7 +51,9 @@ class LocationV2Schema(BaseModel):
     place_type: Optional[str] = Field(None, alias="placeType")
     hierarchy: Optional[HierarchySchema] = None
     names: Optional[NamesSchema] = None
-    vacation_rentals_route: Optional[VacationRentalsRouteSchema] = Field(None, alias="vacationRentalsRoute")
+    vacation_rentals_route: Optional[VacationRentalsRouteSchema] = Field(
+        None, alias="vacationRentalsRoute"
+    )
 
 
 class PhotoSizeDynamicSchema(BaseModel):
@@ -57,12 +63,16 @@ class PhotoSizeDynamicSchema(BaseModel):
 
 
 class ThumbnailSchema(BaseModel):
-    photo_size_dynamic: Optional[PhotoSizeDynamicSchema] = Field(None, alias="photoSizeDynamic")
+    photo_size_dynamic: Optional[PhotoSizeDynamicSchema] = Field(
+        None, alias="photoSizeDynamic"
+    )
 
 
 class LocationSchema(BaseModel):
     localized_name: Optional[str] = Field(None, alias="localizedName")
-    localized_additional_names: Optional[LocalizedAdditionalNamesSchema] = Field(None, alias="localizedAdditionalNames")
+    localized_additional_names: Optional[LocalizedAdditionalNamesSchema] = Field(
+        None, alias="localizedAdditionalNames"
+    )
     street_address: Optional[StreetAddressSchema] = Field(None, alias="streetAddress")
     location_v2: Optional[LocationV2Schema] = Field(None, alias="locationV2")
     url: Optional[str] = None

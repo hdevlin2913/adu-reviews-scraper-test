@@ -15,8 +15,8 @@ from src.utils.headers import get_headers
 
 
 class ReviewsScraper(ReviewsBaseScraper):
-    def __init__(self, proxy_url: str | None) -> None:
-        super().__init__(proxy_url=proxy_url)
+    def __init__(self, use_apify_proxies: bool) -> None:
+        super().__init__(use_apify_proxies=use_apify_proxies)
 
     @staticmethod
     def generate_pagination_urls(
@@ -41,7 +41,9 @@ class ReviewsScraper(ReviewsBaseScraper):
         return list(dict.fromkeys(pagination_urls))
 
     async def scrape_location(
-        self, query: str, limit: int = 10
+        self,
+        query: str,
+        limit: int = 10,
     ) -> List[LocationSchema]:
         payload = [
             {
@@ -92,9 +94,7 @@ class ReviewsScraper(ReviewsBaseScraper):
 
         try:
             data = await self.post_data(
-                url="https://www.tripadvisor.com/data/graphql/ids",
-                headers=get_headers(),
-                data=payload,
+                url="https://www.tripadvisor.com/data/graphql/ids", data=payload
             )
 
             if not data:
@@ -122,11 +122,9 @@ class ReviewsScraper(ReviewsBaseScraper):
                 return []
 
             location = locations[0]
-            hotel_url = base_url + location.hotels_url
+            hotel_url = base_url + location.hotels_url  # type: ignore[operator]
 
-            response = await self.get_data(
-                url=hotel_url, headers=get_headers(), type="text"
-            )
+            response = await self.get_data(url=hotel_url, type="text")
             if not response:
                 log.error(f"No search results for query: {query}")
                 return []
@@ -165,11 +163,14 @@ class ReviewsScraper(ReviewsBaseScraper):
             log.error(f"Error in search hotels for query {query}: {e}")
             return []
 
-    def parse_search_hotel(self, response: str, url: str) -> List[SearchSchema]:
+    def parse_search_hotel(
+        self,
+        response: str,
+        url: str,
+    ) -> List[SearchSchema]:
         soup = BeautifulSoup(response, "lxml")
         parsed = []
 
-        # First case: extracting from hotel-card-title
         for box in soup.select("span.listItem div[data-automation=hotel-card-title] a"):
             title = box.get_text(strip=True, separator=" ")
             href = box.get("href")
@@ -178,7 +179,6 @@ class ReviewsScraper(ReviewsBaseScraper):
         if parsed:
             return parsed
 
-        # Fallback: extracting from listing_title
         for box in soup.select("div.listing_title > a"):
             title = box.get_text(strip=True).split(". ")[-1]
             href = box.get("href")
@@ -195,108 +195,112 @@ class ReviewsScraper(ReviewsBaseScraper):
     ) -> PlaceSchema | None:
         try:
             url = base_url + url_path
-            response = await self.get_data(url=url, headers=get_headers(), type="text")
+            response = await self.get_data(url=url, type="text")
             if not response:
-                  log.error(f"No data found for {url}")
-                  return None
+                log.error(f"No data found for {url}")
+                return None
 
             results = self.parse_data_with_reviews(response=response)
             if not results:
-                  log.error(f"No parseable data found for {url}")
-                  return None
+                log.error(f"No parseable data found for {url}")
+                return None
 
             total_reviews = int(results.basic_data.aggregate_rating.review_count)
             total_pages = math.ceil(total_reviews / page_size)
             if max_pages and max_pages < total_pages:
-                  total_pages = max_pages
+                total_pages = max_pages
 
             pagination_urls = self.generate_pagination_urls(
-                  base_url=url,
-                  page_size=page_size,
-                  total_pages=total_pages,
-                  strategy="reviews",
+                base_url=url,
+                page_size=page_size,
+                total_pages=total_pages,
+                strategy="reviews",
             )
 
             additional_results = await self.fetch_pagination_results(
-                  pagination_urls=pagination_urls,
-                  function=self.parse_data_with_reviews,
+                pagination_urls=pagination_urls,
+                function=self.parse_data_with_reviews,
             )
 
             for response in additional_results:
-                  results.reviews.extend(getattr(response, "reviews", []))
+                results.reviews.extend(getattr(response, "reviews", []))
             return results
         except Exception as e:
             log.error(f"Error in scraping data with reviews for {url}: {e}")
             return None
 
     def parse_data_with_reviews(
-        self, response: str, url: Optional[str] = None
-    ) -> PlaceSchema:
-        soup = BeautifulSoup(response, "lxml")
-        with open(file="response.html", mode="w", encoding="utf-8") as file:
-            file.write(
-                soup.prettify(encoding="utf-8", formatter="html5").decode("utf-8")
+        self,
+        response: str,
+        url: Optional[str] = None,
+    ) -> PlaceSchema | None:
+        try:
+            soup = BeautifulSoup(response, "lxml")
+
+            script_tag = soup.find(
+                "script", string=lambda x: x and "aggregateRating" in x
+            )
+            basic_data = json.loads(script_tag.string) if script_tag else {}
+
+            description_tag = soup.select_one("div.fIrGe._T")
+            description = (
+                description_tag.get_text(strip=True) if description_tag else None
             )
 
-        # Extract basic data
-        script_tag = soup.find("script", string=lambda x: x and "aggregateRating" in x)
-        basic_data = json.loads(script_tag.string) if script_tag else {}
+            amenities = [
+                feature.get_text(strip=True)
+                for feature in soup.select("div[data-test-target*='amenity']")
+            ]
 
-        # Extract description
-        description_tag = soup.select_one("div.fIrGe._T")
-        description = description_tag.get_text(strip=True) if description_tag else None
-
-        # Extract amenities
-        amenities = [
-            feature.get_text(strip=True)
-            for feature in soup.select("div[data-test-target*='amenity']")
-        ]
-
-        # Extract reviews
-        reviews = []
-        for review in soup.select("div[data-reviewid]"):
-            rate_tag = review.select_one("div[data-test-target='review-rating'] title")
-            title_tag = review.select_one(
-                "div[data-test-target='review-title'] a span span"
-            )
-            text_tag = review.select("span[data-automation*='reviewText'] span")
-            trip_date_div = review.select_one("div.PDZqu")
-            trip_date_tag = trip_date_div.find("span")
-
-            rate = (
-                rate_tag.get_text(strip=True).split()[0].replace(",", ".")
-                if rate_tag
-                else None
-            )
-            title = title_tag.get_text(strip=True) if title_tag else None
-            text = (
-                "".join([span.get_text(strip=True) for span in text_tag])
-                if text_tag
-                else None
-            )
-            trip_date = (
-                " ".join(
-                    [
-                        word.capitalize()
-                        for word in trip_date_tag.get_text(strip=True)
-                        .split(":")[-1]
-                        .split()
-                    ]
+            reviews = []
+            for review in soup.select("div[data-reviewid]"):
+                rate_tag = review.select_one(
+                    "div[data-test-target='review-rating'] title"
                 )
-                if trip_date_tag
-                else None
-            )
+                title_tag = review.select_one(
+                    "div[data-test-target='review-title'] a span span"
+                )
+                text_tag = review.select("span[data-automation*='reviewText'] span")
+                trip_date_div = review.select_one("div.PDZqu")
+                trip_date_tag = trip_date_div.find("span")
 
-            reviews.append(
-                Review(title=title, text=text, rate=rate, trip_date=trip_date)
-            )
+                rate = (
+                    rate_tag.get_text(strip=True).split()[0].replace(",", ".")
+                    if rate_tag
+                    else None
+                )
+                title = title_tag.get_text(strip=True) if title_tag else None
+                text = (
+                    "".join([span.get_text(strip=True) for span in text_tag])
+                    if text_tag
+                    else None
+                )
+                trip_date = (
+                    " ".join(
+                        [
+                            word.capitalize()
+                            for word in trip_date_tag.get_text(strip=True)
+                            .split(":")[-1]
+                            .split()
+                        ]
+                    )
+                    if trip_date_tag
+                    else None
+                )
 
-        return PlaceSchema(
-            basic_data=basic_data,
-            description=description,
-            features=amenities,
-            reviews=reviews,
-        )
+                reviews.append(
+                    Review(title=title, text=text, rate=rate, trip_date=trip_date)
+                )
+
+            return PlaceSchema(
+                basic_data=basic_data,
+                description=description,
+                features=amenities,
+                reviews=reviews,
+            )
+        except Exception as e:
+            log.error(f"Error in parsing data with reviews: {e}")
+            return None
 
     async def fetch_pagination_results(
         self,
@@ -306,15 +310,15 @@ class ReviewsScraper(ReviewsBaseScraper):
         results = []
         for url in pagination_urls:
             try:
-               response = await self.get_data(url=url, headers=get_headers(), type="text")
-               data = function(response=response, url=url)
+                response = await self.get_data(url=url, type="text")
+                data = function(response=response, url=url)
 
-               if isinstance(data, dict):
-                  results.append(data)
-               elif isinstance(data, list):
-                  results.extend(data)
+                if isinstance(data, dict):
+                    results.append(data)
+                elif isinstance(data, list):
+                    results.extend(data)
 
-               await asyncio.sleep(1)
+                await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Error in fetching pagination results for {url}: {e}")
 

@@ -2,25 +2,36 @@ import asyncio
 from typing import Any, Dict, Optional, Union
 
 from aiohttp import ClientError, ClientResponse, ClientSession
+from apify import Actor
 from loguru import logger as log
+
+from src.utils.headers import get_headers
 
 
 class ReviewsBaseScraper:
-    def __init__(self, proxy_url: str | None) -> None:
-        self.proxy_url = proxy_url
+    def __init__(self, use_apify_proxies: bool) -> None:
+        self.use_apify_proxies = use_apify_proxies
+
+    async def get_proxy_url(self) -> str | None:
+        if self.use_apify_proxies:
+            proxy_configuration = await Actor.create_proxy_configuration()
+            return await proxy_configuration.new_url()  # type: ignore
+        return None
 
     async def get_data(
         self,
         url: str,
-        headers: Dict,
         type: Optional[str] = None,
         retries: Optional[int] = 3,
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
-        params = {"proxy": self.proxy_url} if self.proxy_url else {}
+        proxy_url = await self.get_proxy_url()
+        params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
-            async with session.get(url=url, headers=headers, **params) as response:
-                while attempts < retries:
+            async with session.get(  # type: ignore
+                url=url, headers=get_headers(), **params
+            ) as response:
+                while attempts < retries:  # type: ignore[operator]
                     try:
                         if type == "json":
                             data = await response.json()
@@ -46,17 +57,17 @@ class ReviewsBaseScraper:
     async def post_data(
         self,
         url: str,
-        headers: Dict,
         data: Any,
         retries: Optional[int] = 3,
     ) -> Dict:
         attempts = 0
-        params = {"proxy": self.proxy_url} if self.proxy_url else {}
+        proxy_url = await self.get_proxy_url()
+        params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
-            async with session.post(
-                url=url, headers=headers, json=data, **params
+            async with session.post(  # type: ignore
+                url=url, headers=get_headers(), json=data, **params
             ) as response:
-                while attempts < retries:
+                while attempts < retries:  # type: ignore[operator]
                     try:
                         data = await response.json()
                         return data

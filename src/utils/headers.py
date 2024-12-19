@@ -5,7 +5,9 @@ from fake_useragent import UserAgent
 
 
 def get_headers() -> dict[str, str]:
-    random_request_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=180))
+    random_request_id = "".join(
+        random.choices(string.ascii_lowercase + string.digits, k=180)
+    )
     ua = UserAgent(
         browsers=["Google", "Chrome", "Firefox", "Edge"],
         os=["Windows", "Linux", "Ubuntu"],

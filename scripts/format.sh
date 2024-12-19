@@ -2,8 +2,8 @@
 
 set -x
 
-ruff format scraper
+ruff format src
 
-ruff check scraper --select I --fix
+ruff check src --select I --fix
 
-black  --skip-string-normalization scraper
+black  --skip-string-normalization src

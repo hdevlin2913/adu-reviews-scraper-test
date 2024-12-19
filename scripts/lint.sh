@@ -2,7 +2,7 @@
 
 set -x
 
-ruff check scraper
-mypy scraper
+ruff check src
+mypy src
 
-black scraper --check
+black src --check
