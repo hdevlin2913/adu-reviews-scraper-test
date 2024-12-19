@@ -122,7 +122,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 return []
 
             location = locations[0]
-            hotel_url = base_url + location.hotels_url  # type: ignore[operator]
+            hotel_url = base_url + location.hotels_url
 
             log.info(f"Scraping hotels for query: {query}")
 

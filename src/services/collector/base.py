@@ -17,7 +17,9 @@ class ReviewsBaseScraper:
             proxy_configuration = await Actor.create_proxy_configuration(
                 groups=["RESIDENTIAL"]
             )
-            return await proxy_configuration.new_url()  # type: ignore
+            proxy_url = await proxy_configuration.new_url()
+            log.info(f"Using proxy: {proxy_url}")
+            return proxy_url
         return None
 
     async def get_data(
@@ -30,10 +32,10 @@ class ReviewsBaseScraper:
         proxy_url = await self.get_proxy_url()
         params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
-            async with session.get(  # type: ignore
+            async with session.get(
                 url=url, headers=get_headers(), **params
             ) as response:
-                while attempts < retries:  # type: ignore[operator]
+                while attempts < retries:
                     try:
                         if type == "json":
                             data = await response.json()
@@ -66,10 +68,10 @@ class ReviewsBaseScraper:
         proxy_url = await self.get_proxy_url()
         params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
-            async with session.post(  # type: ignore
+            async with session.post(
                 url=url, headers=get_headers(), json=data, **params
             ) as response:
-                while attempts < retries:  # type: ignore[operator]
+                while attempts < retries:
                     try:
                         data = await response.json()
                         return data
