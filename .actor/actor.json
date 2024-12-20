@@ -18,10 +18,20 @@
                 "overview": {
                     "title": "Overview",
                     "transformation": {
-                        "fields": ["basic_data.name"]
+                        "fields": ["description", "basic_data"]
                     },
                     "display": {
-                        "component": "table"
+                        "component": "table",
+                        "properties": {
+                            "url": {
+                                "label": "URL",
+                                "format": "text"
+                            },
+                            "title": {
+                                "label": "Title",
+                                "format": "text"
+                            }
+                        }
                     }
                 }
             }
