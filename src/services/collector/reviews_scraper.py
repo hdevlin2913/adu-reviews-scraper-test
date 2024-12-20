@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from loguru import logger as log
 
 from src.schemas.collector.location import LocationSchema
-from src.schemas.collector.place import PlaceSchema, Review
+from src.schemas.collector.place import PlaceSchema, ReviewSchema
 from src.schemas.collector.search import SearchSchema
 from src.services.collector.base import ReviewsBaseScraper
 
@@ -318,7 +318,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 )
 
                 reviews.append(
-                    Review(title=title, text=text, rate=rate, trip_date=trip_date)
+                    ReviewSchema(title=title, text=text, rate=rate, trip_date=trip_date)
                 )
 
             return PlaceSchema(
@@ -507,7 +507,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 )
 
                 reviews.append(
-                    Review(title=title, text=text, rate=rate, trip_date=trip_date)
+                    ReviewSchema(title=title, text=text, rate=rate, trip_date=trip_date)
                 )
 
             return PlaceSchema(
