@@ -30,5 +30,5 @@
             "default": false
         }
     },
-    "required": ["query", "type"]
+    "required": ["type", "params"]
 }
