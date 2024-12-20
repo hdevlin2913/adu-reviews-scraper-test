@@ -1,10 +1,10 @@
 {
-    "title": "Scrape data from a web page",
+    "title": "Scrape data and reviews of places from TripAdvisor",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
        "placesQuery": {
-          "title": "Name of the places to scrape",
+          "title": "List of places to scrape",
           "type": "array",
           "description": "List of places to scrape",
           "prefill": ["Đà Lạt", "Nha Trang", "Vũng Tàu", "Đà Nẵng"],

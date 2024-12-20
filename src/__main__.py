@@ -17,7 +17,7 @@ async def main() -> None:
 
             log.info("Scraping process completed successfully.")
         except Exception as e:
-            log.error("An error occurred during the scraping process: %s", str(e))
+            log.error(f"An error occurred during the scraping process: {e}")
             raise
 
 
