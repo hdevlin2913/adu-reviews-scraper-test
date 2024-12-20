@@ -18,19 +18,24 @@
                 "overview": {
                     "title": "Overview",
                     "transformation": {
-                        "fields": ["basic_data.name", "basic_data.image", "description"],
+                        "fields": ["basic_data.image", "basic_data.url", "basic_data.name", "description"],
                         "flatten": ["basic_data"]
                     },
                     "display": {
                         "component": "table",
                         "properties": {
-                            "basic_data.name": {
-                                "label": "Title",
-                                "format": "text"
-                            },
                             "basic_data.image": {
                                 "label": "Image",
                                 "format": "image"
+                            },
+                            "basic_data.url": {
+                                "label": "Link",
+                                "format": "link",
+                                "transform": "https://www.tripadvisor.com{{basic_data.url}}"
+                            },
+                            "basic_data.name": {
+                                "label": "Title",
+                                "format": "text"
                             },
                             "description": {
                                 "label": "Description",
