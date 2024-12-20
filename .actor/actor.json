@@ -24,9 +24,13 @@
                     "display": {
                         "component": "table",
                         "properties": {
-                            "basic_data": {
-                                "label": "Title",
+                            "basic_data.name": {
+                                "label": "Name",
                                 "format": "text"
+                            },
+                            "basic_data.image": {
+                                "label": "Image",
+                                "format": "image"
                             },
                             "description": {
                                 "label": "Description",
