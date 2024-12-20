@@ -3,26 +3,27 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-       "query": {
-          "title": "Places to scrape",
-          "type": "array",
-          "description": "List of places to scrape",
-          "prefill": ["Đà Lạt", "Nha Trang"],
-          "editor": "stringList"
-       },
-       "type": {
-           "title": "Type of places",
-           "type": "array",
-           "description": "Type of places to scrape",
-           "prefill": ["attractions", "restaurants", "hotels"],
-           "editor": "stringList"
-       },
-       "useApifyProxy": {
-          "title": "Apify Proxy",
-          "type": "boolean",
-          "description": "Use Proxies provided by Apify",
-          "default": false
-       }
+        "type": {
+            "title": "Type of places",
+            "type": "string",
+            "description": "Type of places to scrape",
+            "editor": "select",
+            "default": "attractions",
+            "enum": ["attractions", "restaurants", "hotels"],
+            "enumTitles": ["Du lịch", "Ăn uống", "Khách sạn"]
+        },
+        "params": {
+            "title": "Places to scrape",
+            "type": "object",
+            "description": "List of places to scrape",
+            "editor": "json"
+        },
+        "useApifyProxy": {
+            "title": "Apify Proxy",
+            "type": "boolean",
+            "description": "Use Proxies provided by Apify",
+            "default": false
+        }
     },
     "required": ["query", "type"]
 }

@@ -133,7 +133,7 @@ class ReviewsScraper(ReviewsBaseScraper):
     async def scrape_search_hotels(
         self,
         query: str,
-        max_pages: Optional[int] = None,
+        max_places_page: Optional[int] = None,
         base_url: str = "https://www.tripadvisor.com",
     ) -> List[SearchSchema]:
         try:
@@ -163,8 +163,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             total_hotels = int(total_tag.get_text().replace(",", "").split()[0])
 
             total_pages = int(math.ceil(total_hotels / page_size))
-            if max_pages and max_pages < total_pages:
-                total_pages = max_pages
+            if max_places_page and max_places_page < total_pages:
+                total_pages = max_places_page
 
             next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
             next_page_url = urljoin(hotel_url, next_page_tag)
@@ -214,7 +214,7 @@ class ReviewsScraper(ReviewsBaseScraper):
         self,
         url_path: str,
         page_size: Optional[int] = 10,
-        max_pages: Optional[int] = None,
+        max_reviews_page: Optional[int] = None,
         base_url: str = "https://www.tripadvisor.com",
     ) -> PlaceSchema | None:
         try:
@@ -233,8 +233,8 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             total_reviews = int(hotel_details.basic_data.aggregate_rating.review_count)
             total_pages = math.ceil(total_reviews / page_size)
-            if max_pages and max_pages < total_pages:
-                total_pages = max_pages
+            if max_reviews_page and max_reviews_page < total_pages:
+                total_pages = max_reviews_page
 
             pagination_urls = self.generate_pagination_urls(
                 base_url=url,
@@ -334,7 +334,7 @@ class ReviewsScraper(ReviewsBaseScraper):
     async def scrape_search_attractions(
         self,
         query: str,
-        max_pages: Optional[int] = None,
+        max_places_page: Optional[int] = None,
         base_url: str = "https://www.tripadvisor.com",
     ) -> List[SearchSchema]:
         try:
@@ -368,8 +368,8 @@ class ReviewsScraper(ReviewsBaseScraper):
             total_attractions = int(total_tag.get_text().split(" ")[0])
 
             total_pages = int(math.ceil(total_attractions / page_size))
-            if max_pages and max_pages < total_pages:
-                total_pages = max_pages
+            if max_places_page and max_places_page < total_pages:
+                total_pages = max_places_page
 
             next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
             next_page_url = urljoin(attractions_url, next_page_tag)
@@ -414,7 +414,7 @@ class ReviewsScraper(ReviewsBaseScraper):
         self,
         url_path: str,
         page_size: Optional[int] = 10,
-        max_pages: Optional[int] = None,
+        max_reviews_page: Optional[int] = None,
         base_url: str = "https://www.tripadvisor.com",
     ) -> PlaceSchema | None:
         try:
@@ -437,8 +437,8 @@ class ReviewsScraper(ReviewsBaseScraper):
                 attraction_details.basic_data.aggregate_rating.review_count
             )
             total_pages = math.ceil(total_reviews / page_size)
-            if max_pages and max_pages < total_pages:
-                total_pages = max_pages
+            if max_reviews_page and max_reviews_page < total_pages:
+                total_pages = max_reviews_page
 
             pagination_urls = self.generate_pagination_urls(
                 base_url=url,
