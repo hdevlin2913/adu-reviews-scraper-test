@@ -1,39 +1,30 @@
 {
-   "actorSpecification": 1,
-   "name": "adu-reviews-scraper",
-   "title": "Scrape data and reviews from TripAdvisor",
-   "description": "This actor extracts data and reviews from TripAdvisor.",
-   "version": "0.0",
-   "meta": {
-      "templateId": "python-beautifulsoup"
-   },
-   "input": "./input_schema.json",
-   "dockerfile": "./Dockerfile",
-   "storages": {
-      "dataset": {
-         "actorSpecification": 1,
-         "title": "Places data and reviews",
-         "views": {
-            "titles": {
-               "title": "Overview",
-               "transformation": {
-                  "fields": ["description"]
-               },
-               "display": {
-                  "component": "table",
-                  "properties": {
-                     "url": {
-                        "label": "URL",
-                        "format": "text"
-                     },
-                     "title": {
-                        "label": "Title",
-                        "format": "text"
-                     }
-                  }
-               }
+    "actorSpecification": 1,
+    "name": "adu-reviews-scraper",
+    "title": "Scrape data and reviews from TripAdvisor",
+    "description": "This actor extracts data and reviews from TripAdvisor.",
+    "version": "0.0",
+    "buildTag": "latest",
+    "meta": {
+        "templateId": "python-beautifulsoup"
+    },
+    "input": "./input_schema.json",
+    "dockerfile": "./Dockerfile",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "Places data and reviews",
+            "views": {
+                "overview": {
+                    "title": "Overview",
+                    "transformation": {
+                        "fields": ["basic_data.name"]
+                    },
+                    "display": {
+                        "component": "table"
+                    }
+                }
             }
-         }
-      }
-   }
+        }
+    }
 }

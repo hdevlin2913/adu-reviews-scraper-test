@@ -11,7 +11,6 @@ from src.schemas.collector.location import LocationSchema
 from src.schemas.collector.place import PlaceSchema, Review
 from src.schemas.collector.search import SearchSchema
 from src.services.collector.base import ReviewsBaseScraper
-from src.utils.headers import get_headers
 
 
 class ReviewsScraper(ReviewsBaseScraper):
@@ -253,7 +252,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 hotel_details.reviews.extend(getattr(response, "reviews", []))
 
             log.info(
-                f"Scraped {len(hotel_details.reviews)} hotel details for {hotel_details.basic_data.name}"
+                f"Scraped {len(hotel_details.reviews)} reviews for {hotel_details.basic_data.name}"
             )
             return hotel_details
         except Exception as e:
@@ -457,7 +456,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 attraction_details.reviews.extend(getattr(response, "reviews", []))
 
             log.info(
-                f"Scraped {len(attraction_details.reviews)} attraction details for {attraction_details.basic_data.name}"
+                f"Scraped {len(attraction_details.reviews)} reviews for {attraction_details.basic_data.name}"
             )
             return attraction_details
         except Exception as e:
