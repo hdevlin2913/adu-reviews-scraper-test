@@ -12,12 +12,12 @@
    "storages": {
       "dataset": {
          "actorSpecification": 1,
-         "title": "URLs and their titles",
+         "title": "Places data and reviews",
          "views": {
             "titles": {
-               "title": "URLs and their titles",
+               "title": "Places data and reviews",
                "transformation": {
-                  "fields": ["url", "title"]
+                  "fields": ["description"]
                },
                "display": {
                   "component": "table",
