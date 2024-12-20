@@ -131,7 +131,7 @@ class ReviewsScraper(ReviewsBaseScraper):
                 log.error(f"No search results for query: {query}")
                 return []
 
-            results = self.parse_search_hotel(response=response, url=hotel_url)
+            results = self.parse_search_hotel(response=response)
             if not results:
                 log.error(f"No parseable results for query: {query}")
                 return []
@@ -145,8 +145,6 @@ class ReviewsScraper(ReviewsBaseScraper):
             if max_pages and max_pages < total_pages:
                 total_pages = max_pages
 
-            log.info(max_pages)
-            log.info(total_pages)
             next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
             next_page_url = urljoin(hotel_url, next_page_tag)
             pagination_urls = self.generate_pagination_urls(
@@ -172,7 +170,6 @@ class ReviewsScraper(ReviewsBaseScraper):
     def parse_search_hotel(
         self,
         response: str,
-        url: str,
     ) -> List[SearchSchema]:
         soup = BeautifulSoup(response, "lxml")
         parsed = []
@@ -180,7 +177,7 @@ class ReviewsScraper(ReviewsBaseScraper):
         for box in soup.select("span.listItem div[data-automation=hotel-card-title] a"):
             title = box.get_text(strip=True, separator=" ")
             href = box.get("href")
-            parsed.append(SearchSchema(name=title, url=urljoin(url, href)))
+            parsed.append(SearchSchema(name=title, url=href))
 
         if parsed:
             return parsed
@@ -188,7 +185,7 @@ class ReviewsScraper(ReviewsBaseScraper):
         for box in soup.select("div.listing_title > a"):
             title = box.get_text(strip=True).split(". ")[-1]
             href = box.get("href")
-            parsed.append(SearchSchema(name=title, url=urljoin(url, href)))
+            parsed.append(SearchSchema(name=title, url=href))
 
         return parsed
 
@@ -244,7 +241,6 @@ class ReviewsScraper(ReviewsBaseScraper):
     def parse_data_with_reviews(
         self,
         response: str,
-        url: Optional[str] = None,
     ) -> PlaceSchema | None:
         try:
             soup = BeautifulSoup(response, "lxml")
@@ -321,10 +317,9 @@ class ReviewsScraper(ReviewsBaseScraper):
     ) -> List[Any]:
         results = []
         for url in pagination_urls:
-            log.info(f"Fetching pagination results for {url}")
             try:
                 response = await self.get_data(url=url, type="text")
-                data = parse_function(response=response, url=url)
+                data = parse_function(response=response)
 
                 if isinstance(data, dict):
                     results.append(data)

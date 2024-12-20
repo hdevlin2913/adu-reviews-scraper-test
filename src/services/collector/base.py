@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Dict, Optional, Union
 
-from aiohttp import BasicAuth, ClientError, ClientResponse, ClientSession
+from aiohttp import ClientError, ClientResponse, ClientSession
 from apify import Actor
 from loguru import logger as log
 
@@ -12,16 +12,11 @@ class ReviewsBaseScraper:
     def __init__(self, use_apify_proxies: bool) -> None:
         self.use_apify_proxies = use_apify_proxies
 
-    async def get_proxy_url(self) -> Optional[tuple[str, str, str]]:
+    async def get_proxy_url(self) -> str | None:
         if self.use_apify_proxies:
-            proxy_configuration = await Actor.create_proxy_configuration(
-                groups=["RESIDENTIAL"]
-            )
+            proxy_configuration = await Actor.create_proxy_configuration()
             proxy_url = await proxy_configuration.new_url()
-            username = proxy_configuration._get_username()
-            password = proxy_configuration._password
-            log.info(f"Using proxy: {proxy_url}")
-            return proxy_url, username, password
+            return proxy_url
         return None
 
     async def get_data(
@@ -31,15 +26,8 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Union[ClientResponse, Dict, str, None]:
         attempts = 0
-        proxy_data = await self.get_proxy_url()
-        params = (
-            {
-                "proxy": proxy_data[0],
-                "proxy_auth": BasicAuth(login=proxy_data[1], password=proxy_data[2]),
-            }
-            if proxy_data
-            else {}
-        )
+        proxy_url = await self.get_proxy_url()
+        params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
             async with session.get(
                 url=url, headers=get_headers(), **params
@@ -74,15 +62,8 @@ class ReviewsBaseScraper:
         retries: Optional[int] = 3,
     ) -> Dict:
         attempts = 0
-        proxy_data = await self.get_proxy_url()
-        params = (
-            {
-                "proxy": proxy_data[0],
-                "proxy_auth": BasicAuth(login=proxy_data[1], password=proxy_data[2]),
-            }
-            if proxy_data
-            else {}
-        )
+        proxy_url = await self.get_proxy_url()
+        params = {"proxy": proxy_url} if proxy_url else {}
         async with ClientSession() as session:
             async with session.post(
                 url=url, headers=get_headers(), json=data, **params

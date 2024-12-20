@@ -17,7 +17,7 @@ async def handle_request(input_data: Any) -> List[PlaceSchema]:
     for place_query in places_query:
         hotels = await scraper.scrape_search_hotels(query=place_query, max_pages=2)
         for hotel in hotels:
-            log.info(f"Scraping data for {hotel.name}")
+            log.info(f"Scraping data for {hotel.url}")
             place = await scraper.scrape_data_with_reviews(url_path=hotel.url, max_pages=2)
             if place:
                 log.info("Pushing result to the dataset...")
