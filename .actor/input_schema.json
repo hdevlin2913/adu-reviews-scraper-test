@@ -16,7 +16,12 @@
             "title": "Places to scrape",
             "type": "object",
             "description": "List of places to scrape",
-            "editor": "json"
+            "editor": "json",
+            "prefill": {
+                "query": [],
+                "max_places_page": null,
+                "max_reviews_page": null
+            }
         },
         "useApifyProxy": {
             "title": "Apify Proxy",
