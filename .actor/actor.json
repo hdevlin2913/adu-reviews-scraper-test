@@ -30,8 +30,7 @@
                             },
                             "basic_data.url": {
                                 "label": "Link",
-                                "format": "link",
-                                "transform": "https://www.tripadvisor.com{{basic_data.url}}"
+                                "format": "link"
                             },
                             "basic_data.name": {
                                 "label": "Title",

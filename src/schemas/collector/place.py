@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
+from urllib.parse import urljoin
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from src.schemas.base import SnakeCaseAliasMixin
 
@@ -33,6 +34,11 @@ class BasicData(SnakeCaseAliasMixin):
     aggregate_rating: Optional[AggregateRating] = None
     address: Optional[PostalAddress] = None
     image: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_url(self) -> "BasicData":
+        self.url = urljoin("https://www.tripadvisor.com", self.url)
+        return self
 
 
 class Review(SnakeCaseAliasMixin):
