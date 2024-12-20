@@ -8,14 +8,14 @@
           "type": "array",
           "description": "List of places to scrape",
           "prefill": ["Đà Lạt", "Nha Trang"],
-          "editor": "json"
+          "editor": "stringList"
        },
        "type": {
            "title": "Type of places",
            "type": "array",
            "description": "Type of places to scrape",
            "prefill": ["attractions", "restaurants", "hotels"],
-           "editor": "json"
+           "editor": "stringList"
        },
        "useApifyProxy": {
           "title": "Apify Proxy",
