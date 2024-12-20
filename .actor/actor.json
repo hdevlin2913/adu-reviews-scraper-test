@@ -18,17 +18,17 @@
                 "overview": {
                     "title": "Overview",
                     "transformation": {
-                        "fields": ["name", "image", "description"],
+                        "fields": ["basic_data.name", "basic_data.image", "description"],
                         "flatten": ["basic_data"]
                     },
                     "display": {
                         "component": "table",
                         "properties": {
-                            "name": {
+                            "basic_data.name": {
                                 "label": "Title",
                                 "format": "text"
                             },
-                            "image": {
+                            "basic_data.image": {
                                 "label": "Image",
                                 "format": "image"
                             },
