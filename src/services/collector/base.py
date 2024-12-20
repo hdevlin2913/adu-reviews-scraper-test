@@ -79,7 +79,7 @@ class ReviewsBaseScraper:
                         attempts += 1
                         await asyncio.sleep(1)
                     except ValueError:
-                        log.error(f"Failed to parse response as JSON. Retrying...")
+                        log.error("Failed to parse response as JSON. Retrying...")
                         attempts += 1
                         await asyncio.sleep(1)
 

@@ -13,7 +13,7 @@ async def handle_request(input_data: Any) -> List[PlaceSchema]:
     scraper = ReviewsScraper(use_apify_proxies=use_apify_proxies)
 
     responses = []
-    places_query = input_data.get("placesQuery", [])
+    places_query = input_data.get("query", [])
     for place_query in places_query:
         results = await scraper.scrape_search_attractions(query=place_query, max_pages=1)
         for result in results:
