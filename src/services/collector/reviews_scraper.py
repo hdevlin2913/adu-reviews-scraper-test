@@ -7,9 +7,9 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from loguru import logger as log
 
-from src.schemas.location import LocationSchema
-from src.schemas.place import PlaceSchema, Review
-from src.schemas.search import SearchSchema
+from src.schemas.collector.location import LocationSchema
+from src.schemas.collector.place import PlaceSchema, Review
+from src.schemas.collector.search import SearchSchema
 from src.services.collector.base import ReviewsBaseScraper
 from src.utils.headers import get_headers
 
@@ -39,6 +39,28 @@ class ReviewsScraper(ReviewsBaseScraper):
             msg = f"Unknown pagination strategy: {strategy}"
             raise ValueError(msg)
         return list(dict.fromkeys(pagination_urls))
+
+    async def fetch_pagination_results(
+        self,
+        pagination_urls: List[str],
+        parse_function: Callable,
+    ) -> List[Any]:
+        results = []
+        for url in pagination_urls:
+            try:
+                response = await self.get_data(url=url, type="text")
+                data = parse_function(response=response)
+
+                if isinstance(data, dict):
+                    results.append(data)
+                elif isinstance(data, list):
+                    results.extend(data)
+
+                await asyncio.sleep(5)
+            except Exception as e:
+                log.error(f"Error in fetching pagination results for {url}: {e}")
+
+        return results
 
     async def scrape_location(
         self,
@@ -189,7 +211,7 @@ class ReviewsScraper(ReviewsBaseScraper):
 
         return parsed
 
-    async def scrape_data_with_reviews(
+    async def scrape_hotel_details(
         self,
         url_path: str,
         page_size: Optional[int] = 10,
@@ -200,17 +222,17 @@ class ReviewsScraper(ReviewsBaseScraper):
             url = base_url + url_path
             response = await self.get_data(url=url, type="text")
             if not response:
-                log.error(f"No data found for {url}")
+                log.error(f"No hotel details found for {url}")
                 return None
 
-            results = self.parse_data_with_reviews(response=response)
-            if not results:
-                log.error(f"No parseable data found for {url}")
+            hotel_details = self.parse_hotel_details(response=response)
+            if not hotel_details:
+                log.error(f"No parseable hotel details found for {url}")
                 return None
 
-            log.info(f"Scraping reviews for {results.basic_data.name}")
+            log.info(f"Scraping hotel details for {hotel_details.basic_data.name}")
 
-            total_reviews = int(results.basic_data.aggregate_rating.review_count)
+            total_reviews = int(hotel_details.basic_data.aggregate_rating.review_count)
             total_pages = math.ceil(total_reviews / page_size)
             if max_pages and max_pages < total_pages:
                 total_pages = max_pages
@@ -224,21 +246,21 @@ class ReviewsScraper(ReviewsBaseScraper):
 
             additional_results = await self.fetch_pagination_results(
                 pagination_urls=pagination_urls,
-                parse_function=self.parse_data_with_reviews,
+                parse_function=self.parse_hotel_details,
             )
 
             for response in additional_results:
-                results.reviews.extend(getattr(response, "reviews", []))
+                hotel_details.reviews.extend(getattr(response, "reviews", []))
 
             log.info(
-                f"Scraped {len(results.reviews)} reviews for {results.basic_data.name}"
+                f"Scraped {len(hotel_details.reviews)} hotel details for {hotel_details.basic_data.name}"
             )
-            return results
+            return hotel_details
         except Exception as e:
-            log.error(f"Error in scraping data with reviews for {url}: {e}")
+            log.error(f"Error in scraping hotel details with reviews for {url}: {e}")
             return None
 
-    def parse_data_with_reviews(
+    def parse_hotel_details(
         self,
         response: str,
     ) -> PlaceSchema | None:
@@ -307,27 +329,193 @@ class ReviewsScraper(ReviewsBaseScraper):
                 reviews=reviews,
             )
         except Exception as e:
-            log.error(f"Error in parsing data with reviews: {e}")
+            log.error(f"Error in parsing hotel details with reviews: {e}")
             return None
 
-    async def fetch_pagination_results(
+    async def scrape_search_attractions(
         self,
-        pagination_urls: List[str],
-        parse_function: Callable,
-    ) -> List[Any]:
-        results = []
-        for url in pagination_urls:
-            try:
-                response = await self.get_data(url=url, type="text")
-                data = parse_function(response=response)
+        query: str,
+        max_pages: Optional[int] = None,
+        base_url: str = "https://www.tripadvisor.com",
+    ) -> List[SearchSchema]:
+        try:
+            locations = await self.scrape_location(query=query)
+            if not locations:
+                log.error(f"No locations found for query: {query}")
+                return []
 
-                if isinstance(data, dict):
-                    results.append(data)
-                elif isinstance(data, list):
-                    results.extend(data)
+            location = locations[0]
+            attractions_url = base_url + location.attractions_url.replace(
+                "-Activities-", "-Activities-oa0-"
+            )
 
-                await asyncio.sleep(1)
-            except Exception as e:
-                log.error(f"Error in fetching pagination results for {url}: {e}")
+            log.info(f"Scraping attractions for query: {query}")
 
-        return results
+            response = await self.get_data(url=attractions_url, type="text")
+            if not response:
+                log.error(f"No search results for query: {query}")
+                return []
+
+            results = self.parse_search_attractions(response=response)
+            if not results:
+                log.error(f"No parseable results for query: {query}")
+                return []
+
+            soup = BeautifulSoup(response, "lxml")
+            page_size = len(results)
+            total_tag = soup.find(
+                "section", {"data-automation": "WebPresentation_WebSortDisclaimer"}
+            )
+            total_attractions = int(total_tag.get_text().split(" ")[0])
+
+            total_pages = int(math.ceil(total_attractions / page_size))
+            if max_pages and max_pages < total_pages:
+                total_pages = max_pages
+
+            next_page_tag = soup.find("a", {"aria-label": "Next page"})["href"]
+            next_page_url = urljoin(attractions_url, next_page_tag)
+            pagination_urls = self.generate_pagination_urls(
+                base_url=next_page_url,
+                page_size=page_size,
+                total_pages=total_pages,
+                strategy="default",
+            )
+
+            additional_results = await self.fetch_pagination_results(
+                pagination_urls=pagination_urls,
+                parse_function=self.parse_search_attractions,
+            )
+
+            results.extend(additional_results)
+
+            log.info(f"Scraped {len(results)} attractions for query: {query}")
+            return results
+        except Exception as e:
+            log.error(f"Error in search attractions for query {query}: {e}")
+            return []
+
+    def parse_search_attractions(
+        self,
+        response: str,
+    ) -> List[SearchSchema]:
+        soup = BeautifulSoup(response, "lxml")
+        parsed = []
+
+        card_sections = soup.select(
+            "section.mowmC[data-automation='WebPresentation_SingleFlexCardSection'] header.VLKGO a:first-of-type"
+        )
+        for box in card_sections:
+            title = box.get_text(strip=True, separator=" ")
+            href = box.get("href")
+            parsed.append(SearchSchema(name=title, url=href))
+
+        return parsed
+
+    async def scrape_attraction_details(
+        self,
+        url_path: str,
+        page_size: Optional[int] = 10,
+        max_pages: Optional[int] = None,
+        base_url: str = "https://www.tripadvisor.com",
+    ) -> PlaceSchema | None:
+        try:
+            url = base_url + url_path
+            response = await self.get_data(url=url, type="text")
+            if not response:
+                log.error(f"No attraction details found for {url}")
+                return None
+
+            attraction_details = self.parse_attraction_details(response=response)
+            if not attraction_details:
+                log.error(f"No parseable attraction details found for {url}")
+                return None
+
+            log.info(
+                f"Scraping attraction details for {attraction_details.basic_data.name}"
+            )
+
+            total_reviews = int(
+                attraction_details.basic_data.aggregate_rating.review_count
+            )
+            total_pages = math.ceil(total_reviews / page_size)
+            if max_pages and max_pages < total_pages:
+                total_pages = max_pages
+
+            pagination_urls = self.generate_pagination_urls(
+                base_url=url,
+                page_size=page_size,
+                total_pages=total_pages,
+                strategy="reviews",
+            )
+
+            additional_results = await self.fetch_pagination_results(
+                pagination_urls=pagination_urls,
+                parse_function=self.parse_attraction_details,
+            )
+
+            for response in additional_results:
+                attraction_details.reviews.extend(getattr(response, "reviews", []))
+
+            log.info(
+                f"Scraped {len(attraction_details.reviews)} attraction details for {attraction_details.basic_data.name}"
+            )
+            return attraction_details
+        except Exception as e:
+            log.error(
+                f"Error in scraping attraction details with reviews for {url}: {e}"
+            )
+            return None
+
+    def parse_attraction_details(
+        self,
+        response: str,
+    ) -> PlaceSchema | None:
+        try:
+            soup = BeautifulSoup(response, "lxml")
+
+            script_tag = soup.find(
+                "script", string=lambda x: x and "aggregateRating" in x
+            )
+            basic_data = json.loads(script_tag.string) if script_tag else {}
+
+            description_tag = soup.select_one("div.fIrGe._T")
+            description = (
+                description_tag.get_text(strip=True) if description_tag else None
+            )
+
+            reviews = []
+            for review in soup.select("div[data-automation='reviewCard']"):
+                rate_tag = review.select_one('title[id*="lithium"]')
+                title_tag = review.select_one("a[href*='/ShowUserReviews']")
+                text_tag = review.select("div.fIrGe._T")
+                trip_date_tag = review.select_one("div.RpeCd")
+
+                rate = (
+                    rate_tag.get_text(strip=True).split()[0].replace(",", ".")
+                    if rate_tag
+                    else None
+                )
+                title = title_tag.get_text(strip=True) if title_tag else None
+                text = (
+                    "".join([span.get_text(strip=True) for span in text_tag])
+                    if text_tag
+                    else None
+                )
+                trip_date = (
+                    trip_date_tag.get_text(strip=True).split("•")[0]
+                    if trip_date_tag
+                    else None
+                )
+
+                reviews.append(
+                    Review(title=title, text=text, rate=rate, trip_date=trip_date)
+                )
+
+            return PlaceSchema(
+                basic_data=basic_data,
+                description=description,
+                reviews=reviews,
+            )
+        except Exception as e:
+            log.error(f"Error in parsing attraction details with reviews: {e}")
+            return None

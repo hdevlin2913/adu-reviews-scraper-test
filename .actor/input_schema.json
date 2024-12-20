@@ -4,11 +4,18 @@
     "schemaVersion": 1,
     "properties": {
        "placesQuery": {
-          "title": "List of places to scrape",
+          "title": "Places to scrape",
           "type": "array",
           "description": "List of places to scrape",
-          "prefill": ["Đà Lạt", "Nha Trang", "Vũng Tàu", "Đà Nẵng"],
-          "editor": "json"
+          "prefill": ["Đà Lạt", "Nha Trang"],
+          "editor": "tags"
+       },
+       "type": {
+          "title": "Type of places",
+          "type": "string",
+          "description": "Type of places to scrape",
+          "enum": ["attractions", "restaurants", "hotels"],
+          "default": "attractions"
        },
        "useApifyProxy": {
           "title": "Apify Proxy",
