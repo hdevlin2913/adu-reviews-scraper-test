@@ -11,7 +11,6 @@ async def handle_request(input_data: Any) -> None:
     use_apify_proxies = input_data.get("useApifyProxy", False)
     scraper = ReviewsScraper(use_apify_proxies=use_apify_proxies)
 
-
     params = input_data.get("params", {})
     places_query = params.get("query", [])
 
@@ -22,13 +21,22 @@ async def handle_request(input_data: Any) -> None:
         scrape_search_func = getattr(scraper, search_func)
         scrape_details_func = getattr(scraper, details_func)
         results = await scrape_search_func(
-            query=place_query, max_places_page=params.get("max_places_page", None)
+            query=place_query,
+            max_places_page=params.get("max_places_page", None),
+            max_reviews_page=params.get("max_reviews_page", None),
         )
-        for result in results:
-            log.info(f"Scraping data for {result.url}")
-            place = await scrape_details_func(
-                url_path=result.url, max_reviews_page=params.get("max_reviews_page", None)
-            )
-            if place:
+
+        if isinstance(results, list):
+            for result in results:
+                log.info(f"Scraping data for {result.url}")
+                place = await scrape_details_func(
+                    url_path=result.url,
+                    max_reviews_page=params.get("max_reviews_page", None),
+                )
+                if place:
+                    log.info("Pushing result to the dataset...")
+                    await Actor.push_data(place.model_dump())
+        else:
+            if results:
                 log.info("Pushing result to the dataset...")
-                await Actor.push_data(place.model_dump())
+                await Actor.push_data(results.model_dump())

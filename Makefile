@@ -44,14 +44,15 @@ build.dev: ## Re-build for development environment
 ps: ## Re-build for development environment
 	@docker compose ${STANDALONE_ARGS} ps
 
-.PHONY: format
-format: ## Format the source code
-	@bash ./scripts/format.sh
-
-.PHONY: lint
-lint: ## Lint the source code
-	@bash ./scripts/lint.sh
-
-.PHONY: exec
-exec: ## make exec <service-name> <executable>. E.g: make exec api /bin/bash
-	@docker compose ${STANDALONE_ARGS} $(ARGS)
+.PHONY: seed_input
+seed_input: ## Create a default INPUT.json file
+	@mkdir -p ./storage/key_value_stores/default
+	@echo '{' > ./storage/key_value_stores/default/INPUT.json
+	@echo '   "type": "",' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '   "params": {' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '       "query": [],' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '       "max_places_page": null,' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '       "max_reviews_page": null' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '   },' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '   "useApifyProxy": false' >> ./storage/key_value_stores/default/INPUT.json
+	@echo '}' >> ./storage/key_value_stores/default/INPUT.json

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from aiohttp import ClientError, ClientResponse, ClientSession
 from apify import Actor
@@ -25,7 +25,7 @@ class ReviewsBaseScraper:
         url: str,
         type: Optional[str] = None,
         retries: Optional[int] = 3,
-    ) -> Union[ClientResponse, Dict, str, Any, None]:
+    ) -> Union[ClientResponse, dict, str, Any, None]:
         attempts = 0
         proxy_url = await self.get_proxy_url()
         params = {"proxy": proxy_url} if proxy_url else {}
@@ -61,7 +61,7 @@ class ReviewsBaseScraper:
         url: str,
         data: Any,
         retries: Optional[int] = 3,
-    ) -> Dict:
+    ) -> dict:
         attempts = 0
         proxy_url = await self.get_proxy_url()
         params = {"proxy": proxy_url} if proxy_url else {}
@@ -84,3 +84,26 @@ class ReviewsBaseScraper:
 
         log.error(f"Failed to post data to {url} after {retries} attempts.")
         return {}
+
+    def generate_pagination_urls(
+        self,
+        base_url: str,
+        page_size: int,
+        total_pages: int,
+        strategy: str = "search",
+    ) -> list[str]:
+        if strategy == "search":
+            pagination_urls = [
+                base_url.replace(f"oa{page_size}", f"oa{page_size * i}")
+                for i in range(1, total_pages)
+            ]
+        elif strategy == "reviews":
+            pagination_urls = [
+                base_url.replace("-Reviews-", f"-Reviews-or{page_size * i}-")
+                for i in range(1, total_pages)
+            ]
+        else:
+            msg = f"Unknown pagination strategy: {strategy}"
+            raise ValueError(msg)
+
+        return list(dict.fromkeys(pagination_urls))
